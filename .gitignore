@@ -1,0 +1,35 @@
+# Python / FastAPI
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+.pytest_cache/
+.coverage
+htmlcov/
+*.db
+*.sqlite3
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+
+# Node / React / Vite
+node_modules/
+frontend/node_modules/
+frontend/dist/
+dist/
+.vite/
+.npm
+*.log
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
