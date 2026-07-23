@@ -1,7 +1,7 @@
 <div align="center">
 
 # 🎙️ CareVoice Edge
-### *Complete Offline Edge AI Voice Assistant & Caretaker Ecosystem*
+### *Privacy-First, Offline Edge AI Voice Assistant & Caretaker Platform*
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688.svg?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-18.0%2B-61DAFB.svg?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
@@ -15,13 +15,11 @@
 <br/>
 
 [Project Overview](#-1-project-overview) •
-[Core Modules & Architecture](#-2-core-modules--system-architecture) •
-[Voice AI Engine](#-3-offline-edge-voice-ai-engine) •
-[Emergency Protocol](#-4-emergency-sos--dispatch-protocol) •
-[Caretaker Dashboard](#-5-caretaker-web-dashboard) •
-[Database Architecture](#-6-database-architecture) •
-[API Reference](#-7-rest-api-reference) •
-[Step-by-Step Run Guide](#-8-step-by-step-guide-to-run-the-project)
+[Technology Stack](#-2-technology-stack) •
+[System Architecture & Diagrams](#-3-system-architecture--diagrams) •
+[Directory Structure](#-4-directory-structure) •
+[API Reference](#-5-rest-api-reference) •
+[Step-by-Step Installation & Setup](#-6-step-by-step-installation--setup-guide)
 
 </div>
 
@@ -29,23 +27,35 @@
 
 # 📖 1. Project Overview
 
-**CareVoice Edge** is a privacy-first, zero-cloud dependency Edge AI system engineered to assist elderly individuals and remote patients in maintaining their daily healthcare routines while giving caretakers real-time peace of mind.
+**CareVoice Edge** is an autonomous, privacy-first Edge AI Voice Assistant and Caretaker Platform engineered specifically for elderly care and remote patient monitoring.
 
-Unlike traditional cloud voice assistants (e.g., Amazon Alexa, Google Assistant) that stream sensitive patient audio over the internet, CareVoice Edge executes **all speech recognition, text-to-speech synthesis, dynamic task scheduling, and intent parsing 100% locally on-device** (e.g., Raspberry Pi 5 or local edge gateway).
+Unlike cloud-dependent voice assistants that stream voice data to third-party servers, CareVoice Edge processes **all voice listening, speech recognition (ASR), intent parsing, and text-to-speech (TTS) synthesis 100% locally on-device**. This design guarantees **low latency (<300ms)** and **100% patient data privacy**, functioning reliably even during internet outages.
 
-### 🎯 Why CareVoice Edge?
-
-1. **100% Data Privacy & Security**: Patient voice input, medical prompts, and daily activity logs never leave the local device network.
-2. **Zero Cloud Latency & Offline Operation**: Performs offline speech recognition (ASR) in under **180ms**, operating reliably even during complete internet outages.
-3. **Proactive Spoken Audio Care**: Instead of relying on passive phone notifications, the system speaks reminders out loud via local speakers at scheduled times (e.g., *"It's time to take your 10mg Blood Pressure medicine"*).
-4. **Natural Voice Verification**: Listens for verbal confirmations (*"I took it"*, *"Done"*, *"Finished"*) and automatically records compliance in the database.
-5. **Immediate Emergency Response**: Detects spoken distress phrases (*"Help"*, *"Emergency"*, *"I fell down"*) and instantly triggers an outbound multi-channel alert mesh (Automated Twilio Phone Call, Telegram Bot, ntfy push notification, email).
+### 🌟 Key Features
+- 🔒 **100% Local On-Device AI**: Local speech-to-text (Vosk ASR) and text-to-speech synthesis (`pyttsx3`/Piper).
+- ⏰ **Proactive Audio Reminders**: Scheduled spoken reminders for medication, blood pressure checks, and care routines.
+- 🎙️ **Natural Voice Compliance**: Continuous microphone listening engine that recognizes verbal confirmations (*"I took it"*, *"Done"*).
+- 🚨 **Real-Time Emergency SOS**: Instant detection of distress phrases (*"Help"*, *"Emergency"*, *"I fell down"*). Triggers an outbound multi-channel alert mesh (Twilio phone call, Telegram bot, ntfy push notification, email).
+- 📊 **Caretaker Web Dashboard**: Glassmorphic React dashboard featuring task compliance analytics (Recharts), live voice audio simulation, and patient profile management.
 
 ---
 
-# 🏗️ 2. Core Modules & System Architecture
+# 💻 2. Technology Stack
 
-The project is architected around a clean, decoupled layer separation combining a **FastAPI Clean Architecture Backend** with a **React 18 + TypeScript + Tailwind CSS Frontend**.
+| Layer | Technologies Used |
+| :--- | :--- |
+| **Edge AI Engine** | Vosk ASR, `pyttsx3`, Piper TTS, OpenWakeWord, `sounddevice`, NumPy |
+| **Backend Core** | Python 3.10+, FastAPI 0.110+, Uvicorn, APScheduler, Loguru |
+| **Database & Security** | SQLite / PostgreSQL, SQLAlchemy ORM v2, Alembic, JWT (OAuth2), `bcrypt` |
+| **Alert Dispatchers** | Twilio Voice API, Telegram Bot API, ntfy Push, SMTP Email |
+| **Frontend UI** | React 18, TypeScript 5, Vite, Tailwind CSS v3, Recharts, Lucide Icons |
+| **Testing** | Pytest, HTTPX Async Client, SQLite In-Memory Isolation |
+
+---
+
+# 🏗️ 3. System Architecture & Diagrams
+
+### 3.1 End-to-End System Architecture
 
 ```mermaid
 graph TD
@@ -104,62 +114,39 @@ graph TD
 
 ---
 
-# 🎙️ 3. Offline Edge Voice AI Engine
-
-The Voice Processing Subsystem operates concurrently inside the backend via non-blocking asynchronous audio loops:
-
-- **Speech-to-Text (STT)**: Powered by the **Vosk ASR framework** utilizing a localized light footprint acoustic model (`vosk-model-small-en-us-0.15`). Audio samples are captured via `sounddevice` / `PyAudio` at 16kHz mono PCM.
-- **Text-to-Speech (TTS)**: Uses `pyttsx3` (with native `espeak` fallback on Linux/Raspberry Pi OS) or Piper TTS to synthesize natural spoken audio locally.
-- **Intent Parser**: Evaluates real-time transcriptions against rule-based fuzzy phrase trees:
-  - `TASK_COMPLETED`: *"done"*, *"took medicine"*, *"finished"*, *"yes"*, *"already took it"*
-  - `EMERGENCY_SOS`: *"help"*, *"emergency"*, *"fell down"*, *"i fell"*, *"call doctor"*
-  - `SNOOZE`: *"later"*, *"snooze"*, *"remind me in 10 minutes"*
-
----
-
-# 🚨 4. Emergency SOS & Dispatch Protocol
-
-When an emergency keyword is recognized by the microphone listener or triggered manually from the Caretaker Dashboard, the Emergency Dispatch Engine executes a prioritized fail-safe alert protocol:
+### 3.2 Patient Voice Verification & SOS Sequence
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Patient as Patient (Spoken SOS)
-    participant EdgeEngine as CareVoice Edge Engine
-    participant Twilio as Twilio Phone Call
-    participant Telegram as Telegram Bot
-    participant Push as ntfy Push Notification
-    participant Dashboard as Caretaker UI
+    participant Scheduler as APScheduler Engine
+    participant TTS as Offline TTS (Speaker)
+    participant Patient as Patient (Spoken Audio)
+    participant MicEngine as Mic Listener & Vosk STT
+    participant CoreAPI as FastAPI Core API
+    participant CaretakerUI as Caretaker Dashboard
+    participant AlertNet as Multi-Channel Alert Net
 
-    Patient->>EdgeEngine: Speaks "Help! I fell down"
-    EdgeEngine->>EdgeEngine: Match Intent -> EMERGENCY_SOS
-    
-    par Parallel Multi-Channel Alert Dispatch
-        EdgeEngine->>Twilio: Initiate Automated Phone Call to Caretaker
-        EdgeEngine->>Telegram: Send Urgent Telegram Message + Location/Details
-        EdgeEngine->>Push: Push Critical Mobile Alert to ntfy Topic
-        EdgeEngine->>Dashboard: Flash Emergency Red Alert Modal
+    Scheduler->>TTS: Trigger Scheduled Task ("Time for Blood Pressure Medicine")
+    TTS->>Patient: Play Spoken Audio Prompt via Speaker
+
+    Note over Patient,MicEngine: Voice Response Window Active
+
+    alt Case A: Verbal Task Confirmation
+        Patient->>MicEngine: Speaks "I took my medicine"
+        MicEngine->>CoreAPI: Match Intent -> TASK_COMPLETED
+        CoreAPI->>CaretakerUI: Update Live Dashboard & Compliance Analytics
+    else Case B: Emergency SOS Keyword Detected
+        Patient->>MicEngine: Speaks "Help! I fell down!"
+        MicEngine->>CoreAPI: Match Intent -> EMERGENCY_SOS
+        CoreAPI->>AlertNet: Dispatch Twilio Call + Telegram + Push Alerts
+        AlertNet-->>CaretakerUI: Trigger Red Emergency Alert Banner
     end
 ```
 
 ---
 
-# 🖥️ 5. Caretaker Web Dashboard
-
-The frontend Caretaker Dashboard provides a glassmorphic user interface designed with **React 18**, **TypeScript**, **Vite**, and **Tailwind CSS**.
-
-### Key Pages & Features:
-- **Overview Dashboard**: Instant visual stats on active patient status, upcoming reminders, compliance score percentage, and quick SOS triggers.
-- **Task Compliance Analytics**: Interactive line & bar charts powered by **Recharts** displaying daily and weekly adherence trends.
-- **Reminders Manager**: Add, edit, pause, or remove voice reminder routines with custom schedules.
-- **Patient Profile**: Manage patient medical notes, emergency contact phone numbers, and care directives.
-- **Interactive Voice Simulator**: Test voice prompts, simulate patient speech acknowledgments, and trigger test emergency flows directly from the browser.
-
----
-
-# 💾 6. Database Architecture
-
-CareVoice Edge uses SQLAlchemy ORM backed by SQLite (`carevoice.db`) for lightweight edge persistence (or PostgreSQL for enterprise gateways):
+### 3.3 Database ERD Schema
 
 ```mermaid
 erDiagram
@@ -213,56 +200,84 @@ erDiagram
 
 ---
 
-# 📡 7. REST API Reference
+# 📁 4. Directory Structure
+
+```
+Carevoice-edge/
+├── backend/                      # FastAPI Backend Microservice
+│   ├── app/
+│   │   ├── api/v1/              # REST Routers (Auth, Patient, Reminders, Emergency, Analytics)
+│   │   ├── core/                # JWT Security, Config, Database Engine
+│   │   ├── models/              # SQLAlchemy ORM Models
+│   │   ├── schemas/             # Pydantic v2 Schemas
+│   │   └── services/            # Business Logic Layer
+│   ├── calling/                 # Twilio Voice Call Dispatcher
+│   ├── notifications/           # Telegram, ntfy, SMTP Multi-Channel Alert Engine
+│   ├── scheduler/               # APScheduler Background Manager
+│   ├── voice_engine/            # Vosk STT, pyttsx3 TTS, Intent Parser, Mic Listener
+│   └── tests/                   # Pytest Test Suite
+├── frontend/                     # React Caretaker Dashboard
+│   └── src/
+│       ├── api/                 # Typed Axios Client with JWT interceptors
+│       ├── components/          # Glassmorphic UI Components & Voice Simulator
+│       ├── context/             # AuthContext Provider
+│       └── pages/               # Dashboard, Reminders, PatientProfile, Settings
+└── scripts/                      # One-Click Startup Scripts
+```
+
+---
+
+# 📡 5. REST API Reference
 
 | Category | Method | Endpoint | Auth | Description |
 | :--- | :---: | :--- | :---: | :--- |
-| **Auth** | `POST` | `/api/v1/auth/login` | None | Authenticate caretaker & receive JWT token |
-| **Patient** | `GET` | `/api/v1/patient/profile` | Bearer JWT | Fetch current patient details & emergency numbers |
-| **Patient** | `PUT` | `/api/v1/patient/profile` | Bearer JWT | Update patient medical details |
-| **Reminders** | `GET` | `/api/v1/reminders/` | Bearer JWT | List all scheduled audio reminders |
-| **Reminders** | `POST` | `/api/v1/reminders/` | Bearer JWT | Create a new spoken reminder schedule |
+| **Auth** | `POST` | `/api/v1/auth/login` | None | Authenticate caretaker & return JWT token |
+| **Patient** | `GET` | `/api/v1/patient/profile` | Bearer JWT | Retrieve patient details & emergency contacts |
+| **Patient** | `PUT` | `/api/v1/patient/profile` | Bearer JWT | Update patient medical notes & details |
+| **Reminders** | `GET` | `/api/v1/reminders/` | Bearer JWT | List all scheduled voice reminders |
+| **Reminders** | `POST` | `/api/v1/reminders/` | Bearer JWT | Create a new voice reminder schedule |
 | **Emergency** | `POST` | `/api/v1/emergency/trigger` | Bearer JWT | Manually trigger emergency alert mesh |
-| **Analytics** | `GET` | `/api/v1/analytics/compliance` | Bearer JWT | Calculate compliance percentages & charts data |
+| **Analytics** | `GET` | `/api/v1/analytics/compliance` | Bearer JWT | Calculate compliance percentages & charts |
 | **Live Status**| `GET` | `/api/v1/live-status` | Bearer JWT | Check mic listener state & live prompt status |
 | **Health** | `GET` | `/health` | None | Verify API & database operational status |
 
 ---
 
-# 🚀 8. STEP-BY-STEP GUIDE TO RUN THE PROJECT
+# 🚀 6. Step-by-Step Installation & Setup Guide
 
-Follow these step-by-step instructions to get CareVoice Edge up and running locally on your computer.
+Follow these step-by-step instructions to clone, configure, install dependencies, and run **CareVoice Edge** on any machine (PC / Mac / Linux / Raspberry Pi).
 
 ---
 
-### 📋 Prerequisites Checklist
+### 📋 Prerequisites
 
-Before running the project, ensure you have the following installed on your machine:
-- **Python**: Version `3.10` or `3.11` ([Download Python](https://www.python.org/downloads/))
-- **Node.js**: Version `v18.0.0` or higher ([Download Node.js](https://nodejs.org/))
+Ensure your system has the following installed:
 - **Git**: Installed on your system ([Download Git](https://git-scm.com/))
+- **Python**: Version `3.10` or `3.11` ([Download Python](https://www.python.org/downloads/))
+- **Node.js**: Version `v18.0.0` or higher (`npm v9+`) ([Download Node.js](https://nodejs.org/))
 
 ---
 
-### 🔹 Step 1: Open the Project Directory
+### 🔹 Step 1: Clone the Repository
 
-Open your terminal or PowerShell and navigate to the project directory:
+Open your terminal or command line interface and clone the repository:
 
-```powershell
-cd d:\Antigravity_files\Carevoice-edge
+```bash
+git clone https://github.com/YOUR_USERNAME/Carevoice-edge.git
+cd Carevoice-edge
 ```
 
 ---
 
-### 🔹 Step 2: Set Up the Backend Environment
+### 🔹 Step 2: Set Up & Install Backend Dependencies
 
-1. Navigate to the `backend` directory:
-   ```powershell
+1. Navigate into the `backend` folder:
+   ```bash
    cd backend
    ```
 
-2. Create a Python virtual environment:
-   ```powershell
+2. Create a virtual environment:
+   ```bash
    python -m venv venv
    ```
 
@@ -276,90 +291,80 @@ cd d:\Antigravity_files\Carevoice-edge
      source venv/bin/activate
      ```
 
-4. Install backend dependencies:
-   ```powershell
+4. Install Python dependencies:
+   ```bash
    pip install -r requirements.txt
    ```
 
----
-
-### 🔹 Step 3: Configure Environment Variables
-
-Create your `.env` configuration file from the template:
-
-```powershell
-# On Windows PowerShell:
-Copy-Item .env.example .env
-
-# On Linux / macOS:
-cp .env.example .env
-```
-
-*(Optional)* You can open the generated `.env` file to customize settings or add real Twilio/Telegram keys. By default, missing keys automatically fall back to safe dry-run mode for local testing.
+5. Create your `.env` configuration file from `.env.example`:
+   - **Windows**:
+     ```powershell
+     Copy-Item .env.example .env
+     ```
+   - **Linux / macOS**:
+     ```bash
+     cp .env.example .env
+     ```
 
 ---
 
-### 🔹 Step 4: Set Up the Frontend Environment
+### 🔹 Step 3: Install Frontend Dependencies
 
-1. Open a **new terminal window** and navigate to the `frontend` folder:
-   ```powershell
-   cd d:\Antigravity_files\Carevoice-edge\frontend
+1. Open a **new terminal window**, navigate to the repository root, and enter the `frontend` folder:
+   ```bash
+   cd Carevoice-edge/frontend
    ```
 
-2. Install Node.js package dependencies:
-   ```powershell
+2. Install Node.js packages:
+   ```bash
    npm install
    ```
 
 ---
 
-### 🔹 Step 5: Launch the Application
+### 🔹 Step 4: Run the Application
 
-You can launch both the backend and frontend using either the **One-Click Script (Windows)** or **Manual Dual-Terminal Commands**.
+You can start the backend and frontend using either **Option A** (One-Click Script) or **Option B** (Manual Terminals).
 
-#### Option A: One-Click Startup Script (Windows Recommended)
-Navigate to the root directory and run the included batch script:
+#### Option A: One-Click Script (Windows)
+From the project root folder:
 ```powershell
-cd d:\Antigravity_files\Carevoice-edge
 .\scripts\start_all.bat
 ```
-*This automatically launches two separate terminal windows for the Backend API and Frontend Dashboard.*
 
-#### Option B: Manual Dual-Terminal Execution
+#### Option B: Manual Terminal Execution
 
-- **Terminal 1 (Backend API)**:
+- **Terminal 1 (Backend Server)**:
   ```powershell
-  cd d:\Antigravity_files\Carevoice-edge\backend
+  cd backend
   .\venv\Scripts\Activate.ps1
   python -m uvicorn app.main:app --reload --port 8000
   ```
 
-- **Terminal 2 (Frontend Dashboard)**:
-  ```powershell
-  cd d:\Antigravity_files\Carevoice-edge\frontend
+- **Terminal 2 (Frontend Caretaker Dashboard)**:
+  ```bash
+  cd frontend
   npm run dev
   ```
 
 ---
 
-### 🔹 Step 6: Access the Application & Login
+### 🔹 Step 5: Open Browser & Log In
 
-Once both servers are running, open your web browser:
-
-1. **Caretaker Web Dashboard**: Navigate to [http://localhost:5173](http://localhost:5173)
-2. **Log In** using the default caretaker credentials:
+1. **Caretaker Web Dashboard**: Open [http://localhost:5173](http://localhost:5173)
+2. **Default Credentials**:
    - **Email**: `caretaker@carevoice.local`
    - **Password**: `carevoice123`
-3. **Swagger API Docs**: Explore interactive backend endpoints at [http://localhost:8000/docs](http://localhost:8000/docs)
+3. **Interactive API Documentation (Swagger)**: Open [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
 
-### 🔹 Step 7: Run Automated Tests (Optional)
+### 🔹 Step 6: Verify with Pytest (Optional)
 
-To verify backend integrity, database models, and API routes, run the pytest suite:
+To execute backend automated unit & integration tests:
 
-```powershell
-cd d:\Antigravity_files\Carevoice-edge\backend
+```bash
+cd backend
 python -m pytest -v
 ```
 
